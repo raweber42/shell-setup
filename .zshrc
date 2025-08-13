@@ -74,25 +74,18 @@ ZSH_THEME="awesomepanda"
 plugins=(
     git
     kubectl
-    kube-ps1
+    git-commit
 )
 
-source $ZSH/oh-my-zsh.sh
-
-# Customize kube-ps1 appearance
-KUBE_PS1_PREFIX=''
-KUBE_PS1_SUFFIX=''
-KUBE_PS1_SYMBOL_ENABLE=false
-KUBE_PS1_NS_ENABLE=false
-KUBE_PS1_DIVIDER=':'
-KUBE_PS1_CTX_COLOR='magenta'
-KUBE_PS1_BG_COLOR=''
-
-function get_cluster_short() {
-  echo "$1" | cut -c13-
+# For small commits, with automated branch creation.
+# Created for "conventional commit" branch and commit names
+gbc() {
+  git add .
+  git checkout -b "$1"
+  git commit -m "$(echo "$1" | sed 's/-/: /1' | tr '-' ' ')"
 }
 
-KUBE_PS1_CLUSTER_FUNCTION=get_cluster_short
+source $ZSH/oh-my-zsh.sh
 
 # Set up vcs_info
 autoload -Uz vcs_info
@@ -111,20 +104,9 @@ function parse_git_branch() {
     git branch 2> /dev/null | sed -n -e 's/^\* \(.*\)/[\1]/p'
 }
 
-# Function to shorten cluster name
-shorten_cluster_name() {
-  local cluster_name=$(kube_ps1)
-
-  # TODO: Modify name if convenient
-
-  # Return the modified cluster name
-  echo "$cluster_name"
-}
-
-
 # Set up the prompt
 setopt PROMPT_SUBST
-PROMPT='%F{green}$(get_current_dir)%f $(parse_git_branch) %F{yellow}$(kube_ps1)%f$ '
+PROMPT='%F{green}$(get_current_dir)%f $(parse_git_branch)$ '
 
 # Customize vcs_info colors
 zstyle ':vcs_info:*' branchformat '%b%F{yellow}:%f'
@@ -158,29 +140,24 @@ zstyle ':vcs_info:*' branchformat '%b%F{yellow}:%f'
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+alias dps="docker ps"
 alias dup="docker compose up -d --build"
 alias ddown="docker compose down"
 alias ddownv="docker compose down -v"
-alias dps="docker ps"
-alias gs="git status"
-alias gco="git checkout"
-alias gcommit="git commit -m"
-alias kh="kubectl -n hasura-hub"
-alias klogs="kubectl logs -n hasura-hub"
-alias kpods="kubectl get pods -n hasura-hub"
-alias ksvcs="kubectl get svc -n hasura-hub"
-alias kubedev="kubectl config use-context <DEV_CLUSTER_NAME>"
-alias kubestage="kubectl config use-context <STAGE_CLUSTER_NAME>"
-alias kubeprod="kubectl config use-context <PROD_CLUSTER_NAME>"
+alias gp="git push -o merge_request.create" # Create a merge request on push
 alias k="kubectl"
+alias klogs="kubectl logs"
+alias kpods="kubectl get pods"
+alias ksvcs="kubectl get svc"
 alias tf="terraform"
+alias kb="kubie" # Switch k8s context
 
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+# For krew
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
-#Configure autojump
+# Configure autojump
 [ -f $HOMEBREW_PREFIX/etc/profile.d/autojump.sh ] && . $HOMEBREW_PREFIX/etc/profile.d/autojump.sh
+eval "$(jump shell zsh)"
 
 export PATH=$PATH:$(go env GOPATH)/bin
 
